@@ -27,18 +27,36 @@ def cargar_modelo(path=MODEL_PATH):
     return modelo, labelencoder, variables
 
 
+CATS_BINARIAS = {
+    'SEXO':                ['FEMENINO', 'MASCULINO'],
+    'AREA_ DE_ RESIDENCIA': ['CABECERA MUNICIPAL', 'CENTRO POBLADO', 'RURAL DISPERSO'],
+}
+
+
 def preprocesar(df_raw, variables):
     df = df_raw.copy()
 
+    # Booleanas: codificación directa COLUMN_SI=1/0 para evitar el bug de
+    # get_dummies(drop_first=True) que elimina la única categoría en filas únicas
     cols_bool = [c for c in COLS_BOOLEANAS if c in df.columns]
-    if cols_bool:
-        df = pd.get_dummies(df, columns=cols_bool, drop_first=True, dtype=int)
+    for col in cols_bool:
+        df[col + '_SI'] = (
+            df[col].astype(str).str.strip().str.upper() == 'SI'
+        ).astype(int)
+    df = df.drop(columns=cols_bool, errors='ignore')
 
+    # Multicategoría: drop_first=False, sin problema de categoría única
     cols_mc = [c for c in COLS_MULTICAT if c in df.columns]
     if cols_mc:
         df = pd.get_dummies(df, columns=cols_mc, drop_first=False, dtype=int)
 
+    # Binarias categóricas: categorías fijas para que drop_first sea estable
     cols_bc = [c for c in COLS_BINARIAS_CAT if c in df.columns]
+    for col in cols_bc:
+        df[col] = pd.Categorical(
+            df[col].astype(str).str.strip().str.upper(),
+            categories=CATS_BINARIAS[col],
+        )
     if cols_bc:
         df = pd.get_dummies(df, columns=cols_bc, drop_first=True, dtype=int)
 
