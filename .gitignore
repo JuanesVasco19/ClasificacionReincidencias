@@ -11,9 +11,6 @@ __pycache__/
 node_modules/
 package-lock.json
 
-# Modelo (archivo grande — gestionar por separado si es necesario)
-*.pkl
-
 # Sistema
 .DS_Store
 Thumbs.db
