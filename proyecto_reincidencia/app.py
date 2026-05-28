@@ -1,4 +1,5 @@
 import base64
+from pathlib import Path
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -6,7 +7,8 @@ import plotly.express as px
 from pipeline_reincidencia import cargar_modelo, preprocesar
 from database import guardar_individual, guardar_lote
 
-MODEL_PATH = 'modelo_reincidencia.pkl'
+BASE_DIR = Path(__file__).parent
+MODEL_PATH = str(BASE_DIR / 'modelo_reincidencia.pkl')
 
 # ── CSS INSTITUCIONAL ──────────────────────────────────────────────────────────
 CSS = """
@@ -120,7 +122,7 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 # ── BARRA LATERAL ──────────────────────────────────────────────────────────────
 with st.sidebar:
-    st.image("assets/OIP.jpg", use_container_width=True)
+    st.image(str(BASE_DIR / "assets" / "OIP.jpg"), use_container_width=True)
     st.markdown("""
     <div style="padding: 8px 0 20px 0;">
         <p style="font-size:14px; letter-spacing:2px; color:#6a90b0; margin:0;
@@ -165,7 +167,7 @@ except Exception as exc:
     _ok = False
 
 # ── ENCABEZADO PRINCIPAL ───────────────────────────────────────────────────────
-with open("assets/upb-550x212.png", "rb") as _f:
+with open(BASE_DIR / "assets" / "upb-550x212.png", "rb") as _f:
     _logo_b64 = base64.b64encode(_f.read()).decode()
 
 st.markdown(
