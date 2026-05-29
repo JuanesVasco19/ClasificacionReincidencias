@@ -1,130 +1,196 @@
-# Sistema de Prediccion de Reincidencia en Intentos de Suicidio
+# Predicción de Reincidencia en Conducta Suicida — Municipio de Tunja, Boyacá
 
-Aplicacion Streamlit para desplegar el modelo de Machine Learning que predice
-reincidencia en intentos de suicidio (clasificacion binaria: SI / NO).
-
----
-
-## Estructura de archivos requerida
-
-```
-proyecto_reincidencia/
-├── app.py                    # Aplicacion Streamlit
-├── pipeline_reincidencia.py  # Modulo de preprocesamiento y prediccion
-├── modelo_reincidencia.pkl   # <-- COLOCA AQUI tu modelo entrenado
-├── requirements.txt          # Dependencias Python
-└── README.md                 # Este archivo
-```
-
-> **Importante:** el archivo `modelo_reincidencia.pkl` NO esta incluido en el
-> repositorio. Debes copiarlo manualmente a esta carpeta antes de ejecutar la app.
+Proyecto de minería de datos y despliegue de modelo de Machine Learning para predecir
+la reincidencia en intentos de suicidio (clasificación binaria: SI / NO).
+Desarrollado como herramienta de apoyo a la decisión clínica para la Secretaría de Salud
+del Municipio de Tunja, Boyacá.
 
 ---
 
-## Instalacion
+## Estructura del repositorio
 
-### 1. Requisitos previos
+```
+Despliegue_Reincidencias/
+│
+├── Preprocesamiento_De_Datos_Minería_CasoReincidenciaSuicidios.ipynb
+├── Modelos_Predictivos_Reincidencias_Final.ipynb
+├── Pipeline_Reincidencias.ipynb
+│
+└── proyecto_reincidencia/          # Aplicación de despliegue
+    ├── app.py                      # Interfaz Streamlit
+    ├── pipeline_reincidencia.py    # Módulo de preprocesamiento y predicción
+    ├── database.py                 # Persistencia de evaluaciones en Supabase
+    ├── supabase_client.py          # Cliente Supabase (local y Cloud)
+    ├── modelo_reincidencia.pkl     # Modelo entrenado (no incluido en el repo)
+    ├── requirements.txt            # Dependencias Python
+    ├── .env                        # Variables de entorno (no incluido en el repo)
+    └── assets/
+        ├── OIP.jpg                 # Logo barra lateral
+        └── upb-550x212.png         # Logo encabezado
+```
+
+---
+
+## Notebooks
+
+### 1. Preprocesamiento
+`Preprocesamiento_De_Datos_Minería_CasoReincidenciaSuicidios.ipynb`
+
+Limpieza y transformación del dataset original:
+- Tratamiento de valores nulos y duplicados
+- Codificación de variables categóricas
+- Análisis exploratorio y distribución de clases
+
+### 2. Entrenamiento y evaluación del modelo
+`Modelos_Predictivos_Reincidencias_Final.ipynb`
+
+Construcción y selección del modelo final:
+- Comparación de clasificadores (Regresión Logística, Naive Bayes, Random Forest)
+- Ensamblado con `VotingClassifier` (soft voting)
+- Métricas de evaluación y validación cruzada
+- Exportación del artefacto como `modelo_reincidencia.pkl`
+
+### 3. Pipeline completo
+`Pipeline_Reincidencias.ipynb`
+
+Integración del flujo completo de extremo a extremo:
+- Carga de datos crudos → preprocesamiento → predicción
+- Verificación del artefacto guardado
+
+---
+
+## Artefacto del modelo
+
+El archivo `modelo_reincidencia.pkl` se genera con `pickle` y contiene una lista de
+**3 elementos**:
+
+```python
+artefacto = [modelo, labelencoder, variables]
+pickle.dump(artefacto, open('modelo_reincidencia.pkl', 'wb'))
+```
+
+| Elemento       | Tipo                        | Descripción                                        |
+|----------------|-----------------------------|----------------------------------------------------|
+| `modelo`       | `VotingClassifier` (soft)   | Ensamble: LR + Naive Bayes calibrado + RF          |
+| `labelencoder` | `LabelEncoder`              | Clases: `['NO', 'SI']`                             |
+| `variables`    | `list` / `numpy.ndarray`    | Nombres de columnas después de aplicar get_dummies |
+
+> El modelo no incluye scaler porque el dataset final no contiene variables numéricas
+> continuas que requieran normalización.
+
+---
+
+## Aplicación de despliegue
+
+### Requisitos previos
 - Python 3.8 o superior
-- pip
+- Cuenta en [Supabase](https://supabase.com) con una tabla `evaluaciones_reincidencia`
 
-### 2. Crear entorno virtual (recomendado)
+### Instalación local
 
 ```bash
-# Crear entorno
+# 1. Ir a la carpeta de la app
+cd proyecto_reincidencia
+
+# 2. Crear y activar entorno virtual
 python -m venv venv
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # Linux / Mac
 
-# Activar en Windows
-venv\Scripts\activate
-
-# Activar en Linux / Mac
-source venv/bin/activate
-```
-
-### 3. Instalar dependencias
-
-```bash
+# 3. Instalar dependencias
 pip install -r requirements.txt
 ```
 
----
+### Variables de entorno
 
-## Uso
+Crea el archivo `proyecto_reincidencia/.env` con las credenciales de Supabase:
 
-### Ejecutar la aplicacion
+```
+SUPABASE_URL=https://<tu-proyecto>.supabase.co
+SUPABASE_KEY=<tu-anon-key>
+```
 
-Desde la carpeta `proyecto_reincidencia/`:
+### Archivos que debes colocar manualmente
+
+| Archivo | Descripción |
+|---|---|
+| `proyecto_reincidencia/modelo_reincidencia.pkl` | Artefacto generado por el notebook de entrenamiento |
+| `proyecto_reincidencia/.env` | Credenciales de Supabase (ejecución local) |
+
+### Ejecutar localmente
 
 ```bash
+# Desde dentro de proyecto_reincidencia/
 streamlit run app.py
 ```
 
-La aplicacion se abre automaticamente en el navegador en
-`http://localhost:8501`.
+La aplicación se abre en `http://localhost:8501`.
 
 ---
 
-## Modos de uso
+## Despliegue en Streamlit Cloud
 
-### Modo 1 — Prediccion por Lote (CSV)
+1. Sube el repositorio a GitHub (sin incluir `.env` ni `modelo_reincidencia.pkl`).
+2. En [share.streamlit.io](https://share.streamlit.io), crea una nueva app apuntando a
+   `proyecto_reincidencia/app.py`.
+3. En **Settings → Secrets**, agrega las credenciales de Supabase en formato TOML:
 
-1. Abre la pestana **"Prediccion por Lote (CSV)"**.
-2. Sube un archivo `.csv` con los datos de los pacientes.
-3. El CSV debe tener las mismas columnas que el dataset de entrenamiento
-   (los nombres exactos, incluyendo espacios).
-4. La app mostrara:
-   - Tabla de resultados con columnas `PREDICCION` y `PROBABILIDAD_REINCIDENCIA`.
-   - Metricas: total de casos, reincidentes predichos y porcentaje.
-   - Grafico de barras con la distribucion de predicciones.
-   - Boton para descargar los resultados como CSV.
-
-### Modo 2 — Prediccion Individual
-
-1. Abre la pestana **"Prediccion Individual"**.
-2. Completa todos los campos del formulario:
-   - Datos demograficos (sexo, area de residencia, etc.)
-   - Factores psicosociales (problemas economicos, conflictos, etc.)
-   - Diagnosticos psiquiatricos
-   - Metodo del intento
-3. Haz clic en **Predecir**.
-4. La app mostrara:
-   - Etiqueta **REINCIDENTE** (rojo) o **NO REINCIDENTE** (verde).
-   - Barra de progreso con la probabilidad de reincidencia.
-   - Texto de interpretacion segun el nivel de riesgo:
-     - >= 70 %: alto riesgo — intervencion inmediata.
-     - 50–70 %: riesgo moderado — seguimiento.
-     - < 50 %: riesgo bajo — monitoreo rutinario.
-
----
-
-## Modelo incluido
-
-El artefacto `modelo_reincidencia.pkl` contiene una lista de 4 elementos:
-
-```python
-[modelo, labelencoder, variables, scaler]
+```toml
+SUPABASE_URL = "https://<tu-proyecto>.supabase.co"
+SUPABASE_KEY = "<tu-anon-key>"
 ```
 
-| Elemento       | Descripcion                                             |
-|----------------|---------------------------------------------------------|
-| `modelo`       | VotingClassifier (soft): LR + NB calibrado + RF         |
-| `labelencoder` | LabelEncoder con clases `['NO', 'SI']`                  |
-| `variables`    | Array con los nombres de columnas despues de dummies    |
-| `scaler`       | MinMaxScaler ajustado sobre variables numericas, o None |
+4. Para incluir el modelo, sube `modelo_reincidencia.pkl` al repositorio o a un
+   bucket de Supabase Storage y ajusta `MODEL_PATH` en `app.py`.
 
 ---
 
-## Notas tecnicas
+## Modos de uso de la aplicación
 
-- El modelo se carga una sola vez gracias a `@st.cache_resource`.
-- Los valores faltantes en el CSV se rellenan con 0.
-- Las columnas extra en el CSV se ignoran; las faltantes se completan con 0.
-- El modulo `pipeline_reincidencia.py` puede usarse de forma independiente:
+### Pestaña 1 — Evaluación Individual
+
+Formulario clínico organizado en cuatro secciones:
+
+| Sección | Campos |
+|---|---|
+| I. Datos Sociodemográficos | Sexo, área de residencia, estrato, estado civil, escolaridad, régimen de seguridad social, gestante, población a cargo ICBF |
+| II. Factores de Riesgo Clínico | Trastornos mentales (depresivo, personalidad, bipolar, esquizofrenia), antecedentes familiares, antecedente de violencia |
+| III. Factores de Riesgo Psicosocial | Conflictos, problemas económicos/laborales/jurídicos/familiares, maltrato, consumo de sustancias, alcohol |
+| IV. Características del Evento | Ideación suicida, plan organizado, método utilizado |
+
+Al presionar **GENERAR EVALUACIÓN DE RIESGO** se muestra:
+- Nivel de riesgo: **ALTO** / **MODERADO** / **BAJO**
+- Probabilidad de reincidencia en porcentaje
+- Recomendación clínica según el nivel de riesgo
+- El registro se persiste automáticamente en Supabase
+
+### Pestaña 2 — Evaluación por Lote
+
+- Carga de archivo `.csv` con múltiples registros
+- Las columnas deben coincidir con el formato del dataset de entrenamiento
+- Muestra métricas generales, tabla de resultados y gráfico de distribución
+- Permite descargar el reporte completo como CSV
+- Los registros se persisten automáticamente en Supabase
+
+---
+
+## Notas técnicas
+
+- El modelo se carga una sola vez con `@st.cache_resource`.
+- Las rutas de archivos se resuelven con `pathlib.Path(__file__).parent` para
+  funcionar tanto en local como en Streamlit Cloud.
+- Las variables booleanas (SI/NO) se transforman con `pd.get_dummies(drop_first=True)`
+  usando categorías fijas (`pd.Categorical`) para garantizar columnas estables
+  independientemente del orden de los datos.
+- Las variables multicategoría se transforman con `pd.get_dummies(drop_first=False)`.
+- Las columnas faltantes en el input se rellenan con `0` vía `reindex`.
+- El módulo `pipeline_reincidencia.py` puede usarse de forma independiente:
 
 ```python
 from pipeline_reincidencia import predecir
 import pandas as pd
 
 df = pd.read_csv("nuevos_datos.csv")
-resultados = predecir(df)
-print(resultados[["PREDICCION", "PROBABILIDAD_REINCIDENCIA"]])
+resultado = predecir(df)
+print(resultado[["PREDICCION", "PROBABILIDAD_REINCIDENCIA"]])
 ```
