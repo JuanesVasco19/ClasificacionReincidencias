@@ -27,36 +27,42 @@ def cargar_modelo(path=MODEL_PATH):
     return modelo, labelencoder, variables
 
 
-CATS_BINARIAS = {
-    'SEXO':                ['FEMENINO', 'MASCULINO'],
-    'AREA_ DE_ RESIDENCIA': ['CABECERA MUNICIPAL', 'CENTRO POBLADO', 'RURAL DISPERSO'],
-}
+CATS_BOOLEANAS  = ['NO', 'SI']
+CATS_SEXO       = ['FEMENINO', 'MASCULINO']
+CATS_AREA       = ['CABECERA MUNICIPAL', 'RURAL DISPERSO']
+
+
+def _asegurar_dataframe(entrada):
+    if isinstance(entrada, pd.Series):
+        return entrada.to_frame().T.reset_index(drop=True)
+    return entrada.reset_index(drop=True)
 
 
 def preprocesar(df_raw, variables):
-    df = df_raw.copy()
+    df = _asegurar_dataframe(df_raw)
 
-    # Booleanas: codificación directa COLUMN_SI=1/0 para evitar el bug de
-    # get_dummies(drop_first=True) que elimina la única categoría en filas únicas
+    # Booleanas: categorías fijas ['NO','SI'] → drop_first siempre elimina _NO
+    for col in COLS_BOOLEANAS:
+        if col in df.columns:
+            df[col] = pd.Categorical(df[col], categories=CATS_BOOLEANAS)
     cols_bool = [c for c in COLS_BOOLEANAS if c in df.columns]
-    for col in cols_bool:
-        df[col + '_SI'] = (
-            df[col].astype(str).str.strip().str.upper() == 'SI'
-        ).astype(int)
-    df = df.drop(columns=cols_bool, errors='ignore')
+    if cols_bool:
+        df = pd.get_dummies(df, columns=cols_bool, drop_first=True, dtype=int)
 
-    # Multicategoría: drop_first=False, sin problema de categoría única
+    # Multicategoría: normalizar a string para evitar columnas duplicadas
+    # cuando un CSV mezcla tipos (ej: ESTRATO int vs str)
     cols_mc = [c for c in COLS_MULTICAT if c in df.columns]
+    for col in cols_mc:
+        df[col] = df[col].astype(str).str.strip()
     if cols_mc:
         df = pd.get_dummies(df, columns=cols_mc, drop_first=False, dtype=int)
 
-    # Binarias categóricas: categorías fijas para que drop_first sea estable
+    # Binarias: categorías fijas para que drop_first sea estable
+    for col in COLS_BINARIAS_CAT:
+        if col in df.columns:
+            cats = CATS_SEXO if col == 'SEXO' else CATS_AREA
+            df[col] = pd.Categorical(df[col], categories=cats)
     cols_bc = [c for c in COLS_BINARIAS_CAT if c in df.columns]
-    for col in cols_bc:
-        df[col] = pd.Categorical(
-            df[col].astype(str).str.strip().str.upper(),
-            categories=CATS_BINARIAS[col],
-        )
     if cols_bc:
         df = pd.get_dummies(df, columns=cols_bc, drop_first=True, dtype=int)
 

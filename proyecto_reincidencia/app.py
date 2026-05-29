@@ -281,7 +281,7 @@ with tab_ind:
         sexo = c1.selectbox("Sexo", ["FEMENINO", "MASCULINO"])
         area_residencia = c2.selectbox(
             "Área de residencia",
-            ["CABECERA MUNICIPAL", "RURAL DISPERSO", "CENTRO POBLADO"],
+            ["CABECERA MUNICIPAL", "RURAL DISPERSO"],
         )
         seguridad_social = c3.selectbox(
             "Régimen de seguridad social",
@@ -291,17 +291,16 @@ with tab_ind:
 
         c4, c5, c6 = st.columns(3)
         estrato = c4.selectbox(
-            "Estrato socioeconómico", ["1", "2", "3", "4", "5", "6"]
+            "Estrato socioeconómico", ["1", "2", "3", "4", "5"]
         )
         estado_civil = c5.selectbox(
             "Estado civil",
-            ["SOLTERO/A", "CASADO/A", "UNION LIBRE",
-             "DIVORCIADO/A", "VIUDO(A)", "SEPARADO/A"],
+            ["SOLTERO/A", "CASADO/A", "UNION LIBRE", "DIVORCIADO/A", "VIUDO(A)"],
         )
         escolaridad = c6.selectbox(
             "Nivel de escolaridad",
             ["NINGUNO", "PREESCOLAR", "BASICA PRIMARIA", "BASICA SECUNDARIA",
-             "MEDIA TECNICA", "TECNOLOGIA O TECNICA", "PROFESIONAL",
+             "TECNOLOGIA O TECNICA", "PROFESIONAL",
              "ESPECIALIZACION", "MAESTRIA", "SIN INFORMACION"],
         )
 
